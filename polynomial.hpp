@@ -105,6 +105,19 @@ public:
 		return *this;
 	}
 
+	polynomial operator*(const coeff &rhs) const
+	{ polynomial ret(*this); ret *= polynomial({ rhs }); return ret; }
+
+	polynomial &operator*=(const coeff &rhs)
+	{ *this *= polynomial(rhs); return *this; }
+
+	polynomial shifted(int align) const
+	{
+		if(align >= 0)
+			return polynomial(*this * polynomial(align, 1));
+		return polynomial(*this / polynomial(-align, 1));
+	}
+
 	polynomial operator/(const polynomial &rhs) const
 	{
 		polynomial Q, R;
@@ -171,9 +184,8 @@ public:
 		//                       R_n-1 x +...
 		//
 		//  do:
-		//    L(x) = x^align
 		//    Q_m = -R_n / B_j
-		//    T(x) = (B(x) * L(X)) * Q_m
+		//    T(x) = (B(x) * x^align) * Q_m
 		//    R(x) = R(x) + T(x)
 		//    align = align - 1
 		//  while align >= 0
@@ -192,9 +204,8 @@ public:
 		coeff Q_m;
 		polynomial L, T;
 		do {
-			L = polynomial(align, 1);
 			Q_m = _R.lead_term() / B.lead_term();
-			T = B * L * polynomial({Q_m});
+			T = B.shifted(align) * Q_m;
 			if(_R.terms() < T.terms())
 				_Q.push_back(0);
 			else {
