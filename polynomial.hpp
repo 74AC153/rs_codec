@@ -208,7 +208,7 @@ public:
 		*R = _R;
 	}
 
-	// given A(x), B(x), A > B
+	// given A(x), B(x)
 	// return G, X, Y, s.t.:
 	// A(x) * X(x) + B(x) * Y(x) = G(x)
 	static void polynomial_ext_euclid(
