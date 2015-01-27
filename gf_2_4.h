@@ -7,11 +7,11 @@ public:
 	gf_2_4_lut();
 	~gf_2_4_lut();
 
-	unsigned from_index(unsigned index);
-	unsigned to_index(unsigned rawval);
+	unsigned from_index(unsigned index); // returns rawval
+	unsigned to_index(unsigned rawval); // returns index
 
-	unsigned log(unsigned rawval);
-	unsigned exp(int lograwval);
+	unsigned log(unsigned rawval); // returns lograwval
+	unsigned exp(int lograwval); // returns rawval
 
 private:
 };
@@ -32,8 +32,20 @@ public:
 	bool operator==(const gf_2_4 &rhs)
 	{ return rawval == rhs.rawval; }
 
+	bool operator==(int rhs)
+	{ return rawval == (unsigned) rhs; }
+
+	bool operator==(unsigned rhs)
+	{ return rawval == rhs; }
+
 	bool operator!=(const gf_2_4 &rhs)
 	{ return rawval != rhs.rawval; }
+
+	bool operator!=(int rhs)
+	{ return rawval != (unsigned) rhs; }
+
+	bool operator!=(unsigned rhs)
+	{ return rawval != rhs; }
 
 	gf_2_4 &operator=(const gf_2_4 &rhs)
 	{ rawval = rhs.rawval; return *this; };
@@ -80,6 +92,9 @@ public:
 		}
 		return *this;
 	};
+
+	static unsigned order()
+	{ return 16; }
 
 private:
 	unsigned rawval;

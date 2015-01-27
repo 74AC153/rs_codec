@@ -1,3 +1,9 @@
+#if ! defined(POLYNOMIAL_HPP_INCLUDED)
+#define POLYNOMIAL_HPP_INCLUDED
+
+#include <algorithm>
+#include <vector>
+
 template <class coeff>
 class polynomial {
 public:
@@ -6,6 +12,7 @@ public:
 	polynomial(const std::vector<coeff> &x) { p = x; }
 	polynomial(const polynomial &x) { p = x.p; }
 	polynomial(size_t order, coeff val) { p.resize(order+1); p[order] = val; }
+	polynomial(coeff val) { p.resize(1); p[0] = val; }
 	~polynomial() {}
 
 	polynomial &operator=(const polynomial &rhs)
@@ -118,6 +125,13 @@ public:
 		return polynomial(*this / polynomial(-align, 1));
 	}
 
+	polynomial reversed() const
+	{
+		polynomial ret = *this;
+		reverse(ret.p.begin(), ret.p.end());
+		return ret;
+	}
+
 	polynomial operator/(const polynomial &rhs) const
 	{
 		polynomial Q, R;
@@ -129,7 +143,14 @@ public:
 	{
 		polynomial R;
 		div_quot_rem(this, &R, *this, rhs);
+		return *this;
 	}
+
+	polynomial operator/(const coeff &rhs) const
+	{ polynomial ret(*this); ret /= polynomial({ rhs }); return ret; }
+
+	polynomial &operator/=(const coeff &rhs)
+	{ *this /= polynomial(rhs); return *this; }
 
 	polynomial operator%(const polynomial &rhs) const
 	{
@@ -161,6 +182,9 @@ public:
 
 	const coeff &term(size_t degree) const
 	{ return p[degree]; }
+
+	coeff &operator[](size_t rhs)
+	{ return term(rhs); }
 
 	coeff &term(size_t degree)
 	{ return p[degree]; }
@@ -235,8 +259,11 @@ public:
 
 		polynomial<coeff> checkS, checkT, checkR;
 
+		polynomial<coeff> rem;
 		while(1) {
 			Q = R2 / R1;
+			rem = R2 % R1;
+
 			S0 = S2 - Q * S1;
 			T0 = T2 - Q * T1;
 			R0 = R2 - Q * R1;
@@ -258,7 +285,6 @@ public:
 		*Y = T1;
 	}
 
-
 private:
 	std::vector<coeff> p;
 	static void trim(std::vector<coeff> *v)
@@ -268,3 +294,5 @@ private:
 		v->resize(i);
 	}
 };
+
+#endif
