@@ -93,6 +93,7 @@ int main(void)
 	poly_print(syndrome_good);
 	
 	poly errors_actual({0, 0, 2, 0, 0, 0, 0, 0, 0, 13});
+	//poly errors_actual({0, 0, 2, 0, 15, 0, 0, 0, 0, 13});
 	printf("errors_actual:\n");
 	poly_print(errors_actual);
 
@@ -122,12 +123,12 @@ int main(void)
 	// error loc: chien search
 	poly err_eval_poly;
 	std::vector<unsigned> err_locs;
-	for(unsigned i = 1; i < gf_2_4::order(); i++) {
+	for(unsigned i = 0; i < gf_2_4::order()-1; i++) {
 		gf_2_4 test_root = lut_singleton.exp(-(int)i);
 		gf_2_4 val = sigma.evaluate(test_root);
 		err_eval_poly += poly(i, val);
 		if(val == 0) {
-			err_locs.push_back(i % (gf_2_4::order() - 1));
+			err_locs.push_back(i);
 		}
 	}
 	printf("err_eval_poly:\n");
