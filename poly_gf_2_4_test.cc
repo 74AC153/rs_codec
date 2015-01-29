@@ -38,10 +38,10 @@ void berlekamp(poly *sigma_out, const poly &S)
 				L = K - L;
 				C = lambda / e;
 			}
+			lambda = lambda_new;
 		}
 
 		C *= poly({ 0, 1 });
-		lambda = lambda_new;
 		K++;
 	}
 
@@ -55,8 +55,8 @@ int main(void)
 		lut_singleton.exp(1),
 		lut_singleton.exp(2),
 		lut_singleton.exp(3),
-		//lut_singleton.exp(4),
-		//lut_singleton.exp(5),
+		lut_singleton.exp(4),
+		lut_singleton.exp(5),
 	};
 	
 	poly generator({1});
@@ -67,8 +67,8 @@ int main(void)
 	printf("generator:\n");
 	poly_print(generator);
 
-	poly message({11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1});
-	//poly message({9, 8, 7, 6, 5, 4, 3, 2, 1});
+	//poly message({11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1});
+	poly message({9, 8, 7, 6, 5, 4, 3, 2, 1});
 	printf("message:\n");
 	poly_print(message);
 
@@ -92,8 +92,8 @@ int main(void)
 	printf("good syndrome:\n");
 	poly_print(syndrome_good);
 	
-	poly errors_actual({0, 0, 2, 0, 0, 0, 0, 0, 0, 13});
-	//poly errors_actual({0, 0, 2, 0, 15, 0, 0, 0, 0, 13});
+	//poly errors_actual({0, 0, 2, 0, 0, 0, 0, 0, 0, 13});
+	poly errors_actual({0, 0, 1, 0, 0, 0, 0, 0, 0, 1});
 	printf("errors_actual:\n");
 	poly_print(errors_actual);
 
