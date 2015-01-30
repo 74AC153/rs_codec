@@ -50,7 +50,7 @@ void poly_print(const polynomial<doublecoeff> &P)
 	if(P.terms() == 0)
 		printf("%g ", 0.0);
 	else for(unsigned i = 0; i < P.terms(); i++)
-		printf("%g ", P.term(i).val);
+		printf("%g ", P[i].val);
 }
 
 struct { polynomial<doublecoeff> A, B, Z; } add_tests[] = {
@@ -104,6 +104,49 @@ struct { polynomial<doublecoeff> A, B, X, Y, G; } euclid_tests[] = {
 	{ { 2, 3, 1 }, { 1, 2, 1 }, { 1 }, { -1 }, { 1, 1 } },
 	{ { 2, 5, 4, 1 }, { 1, 3, 3, 1 }, { 1 }, { -1 }, { 1, 2, 1 } },
 };
+
+// given A(x), B(x)
+// return G, X, Y, s.t.:
+// A(x) * X(x) + B(x) * Y(x) = G(x)
+template <class coeff>
+static void polynomial_ext_euclid(
+	polynomial<coeff> *G,
+	polynomial<coeff> *X,
+	polynomial<coeff> *Y,
+	const polynomial<coeff> &A,
+	const polynomial<coeff> &B)
+{
+	polynomial<coeff> S2({1}), T2({0}), R2(A);
+	polynomial<coeff> S1({0}), T1({1}), R1(B);
+	polynomial<coeff> S0, T0, R0, Q;
+
+	polynomial<coeff> checkS, checkT, checkR;
+
+	polynomial<coeff> rem;
+	while(1) {
+		Q = R2 / R1;
+		rem = R2 % R1;
+
+		S0 = S2 - Q * S1;
+		T0 = T2 - Q * T1;
+		R0 = R2 - Q * R1;
+
+		checkS = S0 * A;
+		checkT = T0 * B;
+		checkR = checkS + checkT;
+
+		if(! R0)
+			break;
+
+		R2 = R1; R1 = R0;
+		S2 = S1; S1 = S0;
+		T2 = T1; T1 = T0;
+	}
+
+	*G = R1;
+	*X = S1;
+	*Y = T1;
+}
 
 int main(void)
 {
@@ -164,7 +207,7 @@ do { \
 		polynomial<doublecoeff> Xtest;
 		polynomial<doublecoeff> Ytest;
 
-		polynomial<doublecoeff>::polynomial_ext_euclid(
+		polynomial_ext_euclid<doublecoeff>(
 			&Gtest, &Xtest, &Ytest, euclid_tests[i].A, euclid_tests[i].B);
 
 		if(Gtest != euclid_tests[i].G ||

@@ -12,20 +12,10 @@ public:
 	polynomial(const std::vector<coeff> &x) { p = x; }
 	polynomial(const polynomial &x) { p = x.p; }
 	polynomial(size_t order, coeff val) { p.resize(order+1); p[order] = val; }
-	polynomial(coeff val) { p.resize(1); p[0] = val; }
 	~polynomial() {}
 
 	polynomial &operator=(const polynomial &rhs)
-	{
-		p = rhs.p;
-		return *this;
-	}
-
-	polynomial &operator=(std::initializer_list<coeff> c)
-	{
-		p = std::vector<coeff>(c);
-		return *this;
-	}
+	{ p = rhs.p; return *this; }
 
 	bool operator==(const polynomial &rhs)
 	{
@@ -38,21 +28,13 @@ public:
 	}
 
 	bool operator!=(const polynomial &rhs)
-	{
-		return ! (*this == rhs);
-	}
+	{ return ! (*this == rhs); }
 
 	operator bool()
-	{
-		return p.size() != 0;
-	}
+	{ return p.size() != 0; }
 
 	polynomial operator+(const polynomial &rhs) const
-	{
-		polynomial ret(*this);
-		ret += rhs;
-		return ret;
-	}
+	{ polynomial ret(*this); ret += rhs; return ret; }
 
 	polynomial &operator+=(const polynomial &rhs)
 	{
@@ -65,11 +47,7 @@ public:
 	}
 
 	polynomial operator-(const polynomial &rhs) const
-	{
-		polynomial ret(*this);
-		ret -= rhs;
-		return ret;
-	}
+	{ polynomial ret(*this); ret -= rhs; return ret; }
 
 	polynomial &operator-=(const polynomial &rhs)
 	{
@@ -91,11 +69,7 @@ public:
 	}
 
 	polynomial operator*(const polynomial &rhs) const
-	{
-		polynomial ret(*this);
-		ret *= rhs;
-		return ret;
-	}
+	{ polynomial ret(*this); ret *= rhs; return ret; }
 
 	polynomial &operator*=(const polynomial &rhs)
 	{
@@ -112,32 +86,8 @@ public:
 		return *this;
 	}
 
-	polynomial operator*(const coeff &rhs) const
-	{ polynomial ret(*this); ret *= polynomial({ rhs }); return ret; }
-
-	polynomial &operator*=(const coeff &rhs)
-	{ *this *= polynomial(rhs); return *this; }
-
-	polynomial shifted(int align) const
-	{
-		if(align >= 0)
-			return polynomial(*this * polynomial(align, 1));
-		return polynomial(*this / polynomial(-align, 1));
-	}
-
-	polynomial reversed() const
-	{
-		polynomial ret = *this;
-		reverse(ret.p.begin(), ret.p.end());
-		return ret;
-	}
-
 	polynomial operator/(const polynomial &rhs) const
-	{
-		polynomial Q, R;
-		div_quot_rem(&Q, &R, *this, rhs);
-		return Q;
-	}
+	{ polynomial ret(*this); ret /= rhs; return ret; }
 
 	polynomial &operator/=(const polynomial &rhs)
 	{
@@ -146,24 +96,33 @@ public:
 		return *this;
 	}
 
-	polynomial operator/(const coeff &rhs) const
-	{ polynomial ret(*this); ret /= polynomial({ rhs }); return ret; }
-
-	polynomial &operator/=(const coeff &rhs)
-	{ *this /= polynomial(rhs); return *this; }
-
 	polynomial operator%(const polynomial &rhs) const
-	{
-		polynomial Q, R;
-		div_quot_rem(&Q, &R, *this, rhs);
-		return R;
-	}
+	{ polynomial ret(*this); ret %= rhs; return ret; }
 
 	polynomial &operator%=(const polynomial &rhs)
 	{
 		polynomial Q;
 		div_quot_rem(&Q, this, *this, rhs);
+		return *this;
 	}
+
+	polynomial operator*(const coeff &rhs) const
+	{ polynomial ret(*this); ret *= rhs; return ret; }
+
+	polynomial &operator*=(const coeff &rhs)
+	{ *this *= polynomial(0, rhs); return *this; }
+
+	polynomial operator<<(size_t rhs) const
+	{ polynomial ret(*this); ret <<= rhs; return ret; }
+
+	polynomial &operator<<=(size_t rhs)
+	{ *this *= polynomial(rhs, 1); return *this; }
+
+	polynomial operator/(const coeff &rhs) const
+	{ polynomial ret(*this); ret /= polynomial(0, rhs); return ret; }
+
+	polynomial &operator/=(const coeff &rhs)
+	{ *this /= polynomial(rhs); return *this; }
 
 	coeff evaluate(const coeff &x)
 	{
@@ -177,26 +136,19 @@ public:
 	size_t terms() const
 	{ return p.size(); }
 
-	coeff lead_term() const
-	{ return p.size() ? p[p.size()-1] : 0; }
-
-	const coeff &term(size_t degree) const
-	{ return p[degree]; }
+	const coeff &operator[](size_t rhs) const
+	{ return p[rhs]; }
 
 	coeff &operator[](size_t rhs)
-	{ return term(rhs); }
-
-	coeff &term(size_t degree)
-	{ return p[degree]; }
+	{ return p[rhs]; }
 
 	static void div_quot_rem(polynomial<coeff> *Q, 
 	                         polynomial<coeff> *R,
 	                         const polynomial<coeff> &A, 
 	                         const polynomial<coeff> &B)
 	{
-
-		//  Initialize: R(x) = A(x)
-		//             align = n - j
+		//  Initialize: _R(x) = A(x)
+		//              align = n - j
 		//
 		//  at each step, calculate:
 		//
@@ -228,8 +180,10 @@ public:
 		coeff Q_m;
 		polynomial L, T;
 		do {
-			Q_m = _R.lead_term() / B.lead_term();
-			T = B.shifted(align) * Q_m;
+			coeff _R_lead = _R.terms() ? _R[_R.terms()-1] : coeff(0);
+			coeff B_lead = B.terms() ? B[B.terms()-1] : coeff(0);
+			Q_m = _R_lead / B_lead;
+			T = (B << align) * Q_m;
 			if(_R.terms() < T.terms())
 				_Q.push_back(0);
 			else {
@@ -241,48 +195,6 @@ public:
 		std::reverse(_Q.begin(), _Q.end());
 		*Q = polynomial(_Q);
 		*R = _R;
-	}
-
-	// given A(x), B(x)
-	// return G, X, Y, s.t.:
-	// A(x) * X(x) + B(x) * Y(x) = G(x)
-	static void polynomial_ext_euclid(
-		polynomial<coeff> *G,
-		polynomial<coeff> *X,
-		polynomial<coeff> *Y,
-		const polynomial<coeff> &A,
-		const polynomial<coeff> &B)
-	{
-		polynomial<coeff> S2({1}), T2({0}), R2(A);
-		polynomial<coeff> S1({0}), T1({1}), R1(B);
-		polynomial<coeff> S0, T0, R0, Q;
-
-		polynomial<coeff> checkS, checkT, checkR;
-
-		polynomial<coeff> rem;
-		while(1) {
-			Q = R2 / R1;
-			rem = R2 % R1;
-
-			S0 = S2 - Q * S1;
-			T0 = T2 - Q * T1;
-			R0 = R2 - Q * R1;
-
-			checkS = S0 * A;
-			checkT = T0 * B;
-			checkR = checkS + checkT;
-
-			if(! R0)
-				break;
-
-			R2 = R1; R1 = R0;
-			S2 = S1; S1 = S0;
-			T2 = T1; T1 = T0;
-		}
-
-		*G = R1;
-		*X = S1;
-		*Y = T1;
 	}
 
 private:

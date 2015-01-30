@@ -8,11 +8,11 @@ typedef polynomial<gf_2_4> poly;
 void poly_print(poly &P)
 {
 	for(unsigned i = 0; i < P.terms(); i++)
-		printf("%u ", (unsigned) P.term(i));
+		printf("%u ", (unsigned) P[i]);
 	printf("( ");
 	for(unsigned i = 0; i < P.terms(); i++) {
-		if((unsigned) P.term(i) == 0) printf("- ");
-		else printf("%u ", lut_singleton.log((unsigned) P.term(i)));
+		if((unsigned) P[i] == 0) printf("- ");
+		else printf("%u ", lut_singleton.log((unsigned) P[i]));
 	}
 	printf(")\n");
 }
@@ -28,9 +28,9 @@ void berlekamp(poly *sigma_out, const poly &S)
 	gf_2_4 e;
 
 	while(K <= S.terms()) {
-		e = S.term(K-1);
+		e = S[K-1];
 		for(unsigned i = 1; i <= L; i++)
-			e = e + lambda.term(i) * S.term(K - 1 - i);
+			e = e + lambda[i] * S[K - 1 - i];
 
 		if(e != 0) {
 			lambda_new = lambda + C * e;
@@ -72,7 +72,7 @@ int main(void)
 	printf("message:\n");
 	poly_print(message);
 
-	poly msg_shift = message.shifted(generator.terms()-1);
+	poly msg_shift = message << (generator.terms()-1);
 	printf("msg shift:\n");
 	poly_print(msg_shift);
 
@@ -80,20 +80,20 @@ int main(void)
 	printf("remainder:\n");
 	poly_print(remainder);
 
-	poly transmit = message.shifted(generator.terms()-1) + remainder;
+	poly transmit = msg_shift + remainder;
 	printf("transmit:\n");
 	poly_print(transmit);
 
 	poly syndrome_good;
 	for(unsigned i = 0; i < generator_roots.size(); i++) {
 		gf_2_4 s_i = transmit.evaluate(generator_roots[i]);
-		syndrome_good += poly({s_i}).shifted(i);
+		syndrome_good += poly(i, s_i);
 	}
 	printf("good syndrome:\n");
 	poly_print(syndrome_good);
 	
 	//poly errors_actual({0, 0, 2, 0, 0, 0, 0, 0, 0, 13});
-	poly errors_actual({0, 0, 1, 0, 0, 0, 0, 0, 0, 1});
+	poly errors_actual({0, 0, 1, 0, 15, 0, 0, 0, 0, 1});
 	printf("errors_actual:\n");
 	poly_print(errors_actual);
 
@@ -105,7 +105,7 @@ int main(void)
 	poly syndrome_bad;
 	for(unsigned i = 0; i < generator_roots.size(); i++) {
 		gf_2_4 s_i = received.evaluate(generator_roots[i]);
-		syndrome_bad += poly({s_i}).shifted(i);
+		syndrome_bad += poly(i, s_i);
 	}
 	printf("bad syndrome:\n");
 	poly_print(syndrome_bad);
@@ -141,7 +141,7 @@ int main(void)
 	// calculate derivative of sigma
 	poly sigma_deriv;
 	for(unsigned i = 1; i < sigma.terms(); i += 2) {
-		sigma_deriv += poly(i-1, sigma.term(i));
+		sigma_deriv += poly(i-1, sigma[i]);
 	}
 	printf("sigma_deriv:\n");
 	poly_print(sigma_deriv);
