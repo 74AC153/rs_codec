@@ -16,7 +16,7 @@ public:
 private:
 };
 
-extern gf_2_4_lut lut_singleton;
+extern gf_2_4_lut lut_2_4_singleton;
 
 class gf_2_4
 {
@@ -25,6 +25,12 @@ public:
 	gf_2_4(unsigned _rawval) : rawval(_rawval) {}
 	gf_2_4(const gf_2_4 &x) : rawval(x.rawval) {}
 	~gf_2_4() {}
+
+	static gf_2_4 exp(unsigned pow)
+	{ return gf_2_4(lut_2_4_singleton.exp(pow)); }
+
+	static unsigned log(unsigned val)
+	{ return lut_2_4_singleton.log(val); }
 
 	operator unsigned()
 	{ return rawval; }
@@ -73,9 +79,9 @@ public:
 		if(rawval == 0 || rhs.rawval == 0)
 			rawval = 0;
 		else {
-			unsigned lg_this = lut_singleton.log(rawval);
-			unsigned lg_rhs = lut_singleton.log(rhs.rawval);
-			rawval = lut_singleton.exp(lg_this + lg_rhs);
+			unsigned lg_this = lut_2_4_singleton.log(rawval);
+			unsigned lg_rhs = lut_2_4_singleton.log(rhs.rawval);
+			rawval = lut_2_4_singleton.exp(lg_this + lg_rhs);
 		}
 		return *this;
 	};
@@ -86,9 +92,9 @@ public:
 	gf_2_4 &operator/=(const gf_2_4 &rhs)
 	{
 		if(rawval != 0) {
-			unsigned lg_this = lut_singleton.log(rawval);
-			unsigned lg_rhs = lut_singleton.log(rhs.rawval);
-			rawval = lut_singleton.exp(lg_this - lg_rhs);
+			unsigned lg_this = lut_2_4_singleton.log(rawval);
+			unsigned lg_rhs = lut_2_4_singleton.log(rhs.rawval);
+			rawval = lut_2_4_singleton.exp(lg_this - lg_rhs);
 		}
 		return *this;
 	};

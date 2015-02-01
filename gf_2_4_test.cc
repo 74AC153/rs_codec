@@ -8,16 +8,16 @@ int main()
 	printf("from index to poly to index:\n");
 	for(unsigned i = 0; i < 16; i++)
 		printf("%u -> %u -> %u\n",
-		       i, lut_singleton.from_index(i),
-		       lut_singleton.to_index(lut_singleton.from_index(i)));
+		       i, lut_2_4_singleton.from_index(i),
+		       lut_2_4_singleton.to_index(lut_2_4_singleton.from_index(i)));
 
 	printf("\nlogarithms:\n");
 	for(unsigned i = 0; i < 16; i++)
-		printf("log(%u) = %u\n", i, lut_singleton.log(i));
+		printf("log(%u) = %u\n", i, lut_2_4_singleton.log(i));
 
 	printf("\nexponentials:\n");
 	for(unsigned i = 0; i <= 28; i++)
-		printf("exp(%u) = %u\n", i, lut_singleton.exp(i));
+		printf("exp(%u) = %u\n", i, lut_2_4_singleton.exp(i));
 
 	printf("\naddition:\n");
 	for(unsigned i = 0; i < 16; i++) {

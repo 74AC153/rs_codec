@@ -3,7 +3,7 @@
 static unsigned poly_form_from_idx[16] = { 0 };
 static unsigned log_poly_form[16] = { 0 };
 
-gf_2_4_lut lut_singleton;
+gf_2_4_lut lut_2_4_singleton;
 
 gf_2_4_lut::gf_2_4_lut()
 {

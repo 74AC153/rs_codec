@@ -13,7 +13,7 @@ void poly_print(poly &P)
 	printf("( ");
 	for(unsigned i = 0; i < P.terms(); i++) {
 		if((unsigned) P[i] == 0) printf("- ");
-		else printf("%u ", lut_singleton.log((unsigned) P[i]));
+		else printf("%u ", coeff_type::log((unsigned) P[i]));
 	}
 	printf(")\n");
 }
@@ -92,7 +92,7 @@ void chien_search(
 {
 	//poly err_eval_poly;
 	for(unsigned i = 0; i < len; i++) {
-		coeff_type test_root = lut_singleton.exp(-(int)i);
+		coeff_type test_root = coeff_type::exp(-(int)i);
 		coeff_type val = sigma.evaluate(test_root);
 		//err_eval_poly += poly(i, val);
 		if(val == 0) {
@@ -131,8 +131,8 @@ void forney(
 	*correction = poly();
 	for(unsigned i = 0; i < err_locs.size(); i++) {
 		int loc = (int) err_locs[i];
-		coeff_type root = lut_singleton.exp(loc);
-		coeff_type root_inv = lut_singleton.exp(-loc);
+		coeff_type root = coeff_type::exp(loc);
+		coeff_type root_inv = coeff_type::exp(-loc);
 		// FIXME: fixup root if initial power of gen. poly is not 0
 		coeff_type val = root * omega.evaluate(root_inv) / sigma_deriv.evaluate(root_inv);
 		*correction += poly(loc, val);
@@ -142,12 +142,12 @@ void forney(
 int main(void)
 {
 	std::vector<coeff_type> generator_roots {
-		lut_singleton.exp(0),
-		lut_singleton.exp(1),
-		lut_singleton.exp(2),
-		lut_singleton.exp(3),
-		lut_singleton.exp(4),
-		lut_singleton.exp(5),
+		coeff_type::exp(0),
+		coeff_type::exp(1),
+		coeff_type::exp(2),
+		coeff_type::exp(3),
+		coeff_type::exp(4),
+		coeff_type::exp(5),
 	};
 
 	//poly message({11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1});
