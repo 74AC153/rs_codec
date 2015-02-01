@@ -35,6 +35,7 @@ void rs_encode(
 	printf("remainder:\n");
 	poly_print(remainder);
 
+	// transmit = msg * x^(2t) % generator
 	*transmit = msg_shift + remainder;
 }
 
@@ -43,6 +44,7 @@ void calc_syndrome(
 	const poly &msg,
 	const std::vector<coeff_type> &generator_roots)
 {
+	// syndrome[i] = msg.eval(gen_root[i]) * x^i
 	*syndrome = poly();
 	for(unsigned i = 0; i < generator_roots.size(); i++) {
 		coeff_type s_i = msg.evaluate(generator_roots[i]);
@@ -107,6 +109,7 @@ void forney(
 	const std::vector<coeff_type> &generator_roots)
 {
 	// calculate derivative of sigma
+	// "set even-powered coefficients to 0, then divide by x"
 	poly sigma_deriv;
 	for(unsigned i = 1; i < sigma.terms(); i += 2) {
 		sigma_deriv += poly(i-1, sigma[i]);
@@ -115,11 +118,16 @@ void forney(
 	poly_print(sigma_deriv);
 
 	// calculate omega
-	poly omega = sigma * syndrome % poly(generator_roots.size(), 1);
+	// omega = (syndrome * sigma) mod x^(2t)
+	poly omega = (sigma * syndrome) % poly(generator_roots.size(), 1);
 	printf("omega:\n");
 	poly_print(omega);
 
 	// forney algorithm
+	// err_j = X_j^(1-b) omega(X_j^(-1)) / lambda_deriv(X_j^(-1))
+	// X_j = a^(err_loc[j])
+	// b = exponent for first generator root
+	// NB: assume b is 0 for now (see FIXME below)
 	*correction = poly();
 	for(unsigned i = 0; i < err_locs.size(); i++) {
 		int loc = (int) err_locs[i];
@@ -193,89 +201,3 @@ int main(void)
 
 	return 0;
 }
-
-#if 0
-	poly R(generator_roots.size(), 1);
-	poly S = syndrome_bad;
-	poly A = poly(0, 1);
-	poly B;
-	int i = 0;
-	while(S.terms() >= generator_roots.size() / 2) {
-		poly Q = R / S;
-		poly S_ = R % S;
-		poly A_ = Q * A + B;
-		poly R_ = S;
-		poly B_ = A;
-		i++;
-		if(S.terms() >= generator_roots.size() / 2)
-			break;
-		S = S_;
-		A = A_;
-		R = R_;
-		B = B_;
-	}
-	poly lambda = A / poly(0, A.term(0));
-	poly omega = S / poly(0, A.term(0));
-
-#elif 0
-	poly lambda, F, omega;
-	// lambda(x) * S(x) + F(x) * x^2t = omega(x)
-	poly::polynomial_ext_euclid(
-		&omega,
-		&F,
-		&lambda,
-		poly(generator_roots.size(), 1),
-		syndrome_bad);
-
-	printf("lambda/sigma:\n");
-	poly_print(lambda);
-
-	printf("omega/A:\n");
-	poly_print(omega);
-
-	printf("F/B:\n");
-	poly_print(F);
-
-	poly sigma_r = lambda.reversed();
-	printf("sigma_r:\n");
-	poly_print(sigma_r);
-#endif
-
-#if 0
-	// error values
-	std::vector<coeff_type> err_vals;
-	for(unsigned i = 0; i < err_locs.size(); i++) {
-		coeff_type zi(lut_singleton.exp(err_locs[i]));
-
-		coeff_type zi_inv = coeff_type(1) / zi;
-		coeff_type numer = omega.evaluate(zi_inv);
-
-		coeff_type prod = 1;
-		for(unsigned j = 0; j < err_locs.size(); j++) {
-			if(j == i)
-				continue;
-			coeff_type zj(lut_singleton.exp(err_locs[j]));
-			coeff_type t = zj / zi;
-			prod *= t + coeff_type(1);
-		}
-		coeff_type denom = zi * prod;
-
-		coeff_type yi = numer / denom;
-		err_vals.push_back(yi);
-	}
-
-	poly errors_est;
-	for(unsigned i = 0; i < err_locs.size(); i++) {
-		errors_est += poly(err_locs[i], err_vals[i]);
-	}
-
-	printf("errors estimated:\n");
-	poly_print(errors_est);
-
-	poly corrected = received + errors_est;
-	printf("corrected:\n");
-	poly_print(corrected);
-	printf("transmit compare:\n");
-	poly_print(transmit);
-	
-#endif
