@@ -18,6 +18,26 @@ void poly_print(poly &P)
 	printf(")\n");
 }
 
+void rs_encode(
+	poly *transmit,
+	const poly &message,
+	const std::vector<coeff_type> &generator_roots)
+{
+	poly generator = poly::from_roots(generator_roots);
+	printf("generator:\n");
+	poly_print(generator);
+
+	poly msg_shift = message << (generator.terms()-1);
+	printf("msg shift:\n");
+	poly_print(msg_shift);
+
+	poly remainder = msg_shift % generator;
+	printf("remainder:\n");
+	poly_print(remainder);
+
+	*transmit = msg_shift + remainder;
+}
+
 void calc_syndrome(
 	poly *syndrome,
 	const poly &msg,
@@ -30,7 +50,9 @@ void calc_syndrome(
 	}
 }
 
-void berlekamp(poly *sigma_out, const poly &syndrome)
+void berlekamp(
+	poly *sigma_out,
+	const poly &syndrome)
 {
 	unsigned K = 1;
 	unsigned L = 0;
@@ -54,7 +76,7 @@ void berlekamp(poly *sigma_out, const poly &syndrome)
 			sigma = sigma_new;
 		}
 
-		C *= poly({ 0, 1 });
+		C *= poly(1, 1);
 		K++;
 	}
 
@@ -77,6 +99,38 @@ void chien_search(
 	}
 }
 
+void forney(
+	poly *correction,
+	const poly &sigma,
+	const poly &syndrome,
+	const std::vector<unsigned> &err_locs,
+	const std::vector<coeff_type> &generator_roots)
+{
+	// calculate derivative of sigma
+	poly sigma_deriv;
+	for(unsigned i = 1; i < sigma.terms(); i += 2) {
+		sigma_deriv += poly(i-1, sigma[i]);
+	}
+	printf("sigma_deriv:\n");
+	poly_print(sigma_deriv);
+
+	// calculate omega
+	poly omega = sigma * syndrome % poly(generator_roots.size(), 1);
+	printf("omega:\n");
+	poly_print(omega);
+
+	// forney algorithm
+	*correction = poly();
+	for(unsigned i = 0; i < err_locs.size(); i++) {
+		int loc = (int) err_locs[i];
+		coeff_type root = lut_singleton.exp(loc);
+		coeff_type root_inv = lut_singleton.exp(-loc);
+		// FIXME: fixup root if initial power of gen. poly is not 0
+		coeff_type val = root * omega.evaluate(root_inv) / sigma_deriv.evaluate(root_inv);
+		*correction += poly(loc, val);
+	}
+}
+
 int main(void)
 {
 	std::vector<coeff_type> generator_roots {
@@ -87,25 +141,15 @@ int main(void)
 		lut_singleton.exp(4),
 		lut_singleton.exp(5),
 	};
-	
-	poly generator = poly::from_roots(generator_roots);
-	printf("generator:\n");
-	poly_print(generator);
 
 	//poly message({11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1});
 	poly message({9, 8, 7, 6, 5, 4, 3, 2, 1});
 	printf("message:\n");
 	poly_print(message);
 
-	poly msg_shift = message << (generator.terms()-1);
-	printf("msg shift:\n");
-	poly_print(msg_shift);
-
-	poly remainder = msg_shift % generator;
-	printf("remainder:\n");
-	poly_print(remainder);
-
-	poly transmit = msg_shift + remainder;
+	
+	poly transmit;
+	rs_encode(&transmit, message, generator_roots);
 	printf("transmit:\n");
 	poly_print(transmit);
 
@@ -114,6 +158,7 @@ int main(void)
 	printf("good syndrome:\n");
 	poly_print(syndrome_good);
 	
+
 	//poly errors_actual({0, 0, 2, 0, 0, 0, 0, 0, 0, 13});
 	poly errors_actual({0, 0, 1, 0, 15, 0, 0, 0, 0, 1});
 	printf("errors_actual:\n");
@@ -134,7 +179,6 @@ int main(void)
 	printf("sigma:\n");
 	poly_print(sigma);
 
-	// error loc: chien search
 	std::vector<unsigned> err_locs;
 	chien_search(&err_locs, coeff_type::order()-1, sigma);
 	printf("err locs:\n");
@@ -142,32 +186,8 @@ int main(void)
 		printf("%u ", err_locs[i]);
 	printf("\n");
 
-
-	// calculate error value polynomial
-
-	// calculate derivative of sigma
-	poly sigma_deriv;
-	for(unsigned i = 1; i < sigma.terms(); i += 2) {
-		sigma_deriv += poly(i-1, sigma[i]);
-	}
-	printf("sigma_deriv:\n");
-	poly_print(sigma_deriv);
-
-	// calculate omega
-	poly omega = sigma * syndrome_bad % poly(generator_roots.size(), 1);
-	printf("omega:\n");
-	poly_print(omega);
-
-	// forney algorithm
 	poly correction;
-	for(unsigned i = 0; i < err_locs.size(); i++) {
-		int loc = (int) err_locs[i];
-		coeff_type root = lut_singleton.exp(loc);
-		coeff_type root_inv = lut_singleton.exp(-loc);
-		// FIXME: fixup root if initial power of gen. poly is not 0
-		coeff_type val = root * omega.evaluate(root_inv) / sigma_deriv.evaluate(root_inv);
-		correction += poly(loc, val);
-	}
+	forney(&correction, sigma, syndrome_bad, err_locs, generator_roots);
 	printf("correction:\n");
 	poly_print(correction);
 
