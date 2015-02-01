@@ -3,7 +3,8 @@
 #include "polynomial.hpp"
 #include "gf_2_4.h"
 
-typedef polynomial<gf_2_4> poly;
+typedef gf_2_4 coeff_type;
+typedef polynomial<coeff_type> poly;
 
 void poly_print(poly &P)
 {
@@ -17,40 +18,53 @@ void poly_print(poly &P)
 	printf(")\n");
 }
 
-void berlekamp(poly *sigma_out, const poly &S)
+void calc_syndrome(
+	poly *syndrome,
+	const poly &msg,
+	const std::vector<coeff_type> &generator_roots)
+{
+	*syndrome = poly();
+	for(unsigned i = 0; i < generator_roots.size(); i++) {
+		coeff_type s_i = msg.evaluate(generator_roots[i]);
+		*syndrome += poly(i, s_i);
+	}
+}
+
+void berlekamp(poly *sigma_out, const poly &syndrome)
 {
 	unsigned K = 1;
 	unsigned L = 0;
-	poly lambda { 1 };
-	poly lambda_new;
+	poly sigma { 1 };
+	poly sigma_new;
 	poly C { 0, 1 };
 
-	gf_2_4 e;
+	coeff_type e;
 
-	while(K <= S.terms()) {
-		e = S[K-1];
+	while(K <= syndrome.terms()) {
+		e = syndrome[K-1];
 		for(unsigned i = 1; i <= L; i++)
-			e = e + lambda[i] * S[K - 1 - i];
+			e = e + sigma[i] * syndrome[K - 1 - i];
 
 		if(e != 0) {
-			lambda_new = lambda + C * e;
+			sigma_new = sigma + C * e;
 			if(2 * L < K) {
 				L = K - L;
-				C = lambda / e;
+				C = sigma / e;
 			}
-			lambda = lambda_new;
+			sigma = sigma_new;
 		}
 
 		C *= poly({ 0, 1 });
 		K++;
 	}
 
-	*sigma_out = lambda;
+	*sigma_out = sigma;
 }
+
 
 int main(void)
 {
-	std::vector<gf_2_4> generator_roots {
+	std::vector<coeff_type> generator_roots {
 		lut_singleton.exp(0),
 		lut_singleton.exp(1),
 		lut_singleton.exp(2),
@@ -59,11 +73,7 @@ int main(void)
 		lut_singleton.exp(5),
 	};
 	
-	poly generator({1});
-	for(unsigned i = 0; i < generator_roots.size(); i++) {
-		generator *= poly({ generator_roots[i], 1 });
-	}
-
+	poly generator = poly::from_roots(generator_roots);
 	printf("generator:\n");
 	poly_print(generator);
 
@@ -85,10 +95,7 @@ int main(void)
 	poly_print(transmit);
 
 	poly syndrome_good;
-	for(unsigned i = 0; i < generator_roots.size(); i++) {
-		gf_2_4 s_i = transmit.evaluate(generator_roots[i]);
-		syndrome_good += poly(i, s_i);
-	}
+	calc_syndrome(&syndrome_good, transmit, generator_roots);
 	printf("good syndrome:\n");
 	poly_print(syndrome_good);
 	
@@ -103,10 +110,7 @@ int main(void)
 
 
 	poly syndrome_bad;
-	for(unsigned i = 0; i < generator_roots.size(); i++) {
-		gf_2_4 s_i = received.evaluate(generator_roots[i]);
-		syndrome_bad += poly(i, s_i);
-	}
+	calc_syndrome(&syndrome_bad, received, generator_roots);
 	printf("bad syndrome:\n");
 	poly_print(syndrome_bad);
 
@@ -115,17 +119,12 @@ int main(void)
 	printf("sigma:\n");
 	poly_print(sigma);
 
-	// calculate omega
-	poly omega = sigma * syndrome_bad % poly(generator_roots.size(), 1);
-	printf("omega:\n");
-	poly_print(omega);
-
 	// error loc: chien search
 	poly err_eval_poly;
 	std::vector<unsigned> err_locs;
-	for(unsigned i = 0; i < gf_2_4::order()-1; i++) {
-		gf_2_4 test_root = lut_singleton.exp(-(int)i);
-		gf_2_4 val = sigma.evaluate(test_root);
+	for(unsigned i = 0; i < coeff_type::order()-1; i++) {
+		coeff_type test_root = lut_singleton.exp(-(int)i);
+		coeff_type val = sigma.evaluate(test_root);
 		err_eval_poly += poly(i, val);
 		if(val == 0) {
 			err_locs.push_back(i);
@@ -138,6 +137,9 @@ int main(void)
 		printf("%u ", err_locs[i]);
 	printf("\n");
 
+
+	// calculate error value polynomial
+
 	// calculate derivative of sigma
 	poly sigma_deriv;
 	for(unsigned i = 1; i < sigma.terms(); i += 2) {
@@ -146,14 +148,19 @@ int main(void)
 	printf("sigma_deriv:\n");
 	poly_print(sigma_deriv);
 
-	// calculate error value polynomial
+	// calculate omega
+	poly omega = sigma * syndrome_bad % poly(generator_roots.size(), 1);
+	printf("omega:\n");
+	poly_print(omega);
+
+	// forney algorithm
 	poly correction;
 	for(unsigned i = 0; i < err_locs.size(); i++) {
 		int loc = (int) err_locs[i];
-		gf_2_4 root = lut_singleton.exp(loc);
-		gf_2_4 root_inv = lut_singleton.exp(-loc);
-		// FIXME: fixup root if initial root power of gen. poly is not 0
-		gf_2_4 val = root * omega.evaluate(root_inv) / sigma_deriv.evaluate(root_inv);
+		coeff_type root = lut_singleton.exp(loc);
+		coeff_type root_inv = lut_singleton.exp(-loc);
+		// FIXME: fixup root if initial power of gen. poly is not 0
+		coeff_type val = root * omega.evaluate(root_inv) / sigma_deriv.evaluate(root_inv);
 		correction += poly(loc, val);
 	}
 	printf("correction:\n");
@@ -211,24 +218,24 @@ int main(void)
 
 #if 0
 	// error values
-	std::vector<gf_2_4> err_vals;
+	std::vector<coeff_type> err_vals;
 	for(unsigned i = 0; i < err_locs.size(); i++) {
-		gf_2_4 zi(lut_singleton.exp(err_locs[i]));
+		coeff_type zi(lut_singleton.exp(err_locs[i]));
 
-		gf_2_4 zi_inv = gf_2_4(1) / zi;
-		gf_2_4 numer = omega.evaluate(zi_inv);
+		coeff_type zi_inv = coeff_type(1) / zi;
+		coeff_type numer = omega.evaluate(zi_inv);
 
-		gf_2_4 prod = 1;
+		coeff_type prod = 1;
 		for(unsigned j = 0; j < err_locs.size(); j++) {
 			if(j == i)
 				continue;
-			gf_2_4 zj(lut_singleton.exp(err_locs[j]));
-			gf_2_4 t = zj / zi;
-			prod *= t + gf_2_4(1);
+			coeff_type zj(lut_singleton.exp(err_locs[j]));
+			coeff_type t = zj / zi;
+			prod *= t + coeff_type(1);
 		}
-		gf_2_4 denom = zi * prod;
+		coeff_type denom = zi * prod;
 
-		gf_2_4 yi = numer / denom;
+		coeff_type yi = numer / denom;
 		err_vals.push_back(yi);
 	}
 

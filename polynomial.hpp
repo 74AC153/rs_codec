@@ -14,6 +14,14 @@ public:
 	polynomial(size_t order, coeff val) { p.resize(order+1); p[order] = val; }
 	~polynomial() {}
 
+	static polynomial from_roots(const std::vector<coeff> &roots)
+	{
+		polynomial ret(0, 1);
+		for(unsigned i = 0; i < roots.size(); i++)
+			ret *= polynomial({ roots[i], 1 });
+		return ret;
+	}
+
 	polynomial &operator=(const polynomial &rhs)
 	{ p = rhs.p; return *this; }
 
@@ -124,7 +132,7 @@ public:
 	polynomial &operator/=(const coeff &rhs)
 	{ *this /= polynomial(rhs); return *this; }
 
-	coeff evaluate(const coeff &x)
+	coeff evaluate(const coeff &x) const
 	{
 		coeff ret = 0;
 		for(unsigned i = p.size(); i; i--) {
