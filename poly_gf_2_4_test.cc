@@ -61,6 +61,21 @@ void berlekamp(poly *sigma_out, const poly &syndrome)
 	*sigma_out = sigma;
 }
 
+void chien_search(
+	std::vector<unsigned> *err_locs,
+	unsigned len,
+	const poly &sigma)
+{
+	//poly err_eval_poly;
+	for(unsigned i = 0; i < len; i++) {
+		coeff_type test_root = lut_singleton.exp(-(int)i);
+		coeff_type val = sigma.evaluate(test_root);
+		//err_eval_poly += poly(i, val);
+		if(val == 0) {
+			err_locs->push_back(i);
+		}
+	}
+}
 
 int main(void)
 {
@@ -120,18 +135,8 @@ int main(void)
 	poly_print(sigma);
 
 	// error loc: chien search
-	poly err_eval_poly;
 	std::vector<unsigned> err_locs;
-	for(unsigned i = 0; i < coeff_type::order()-1; i++) {
-		coeff_type test_root = lut_singleton.exp(-(int)i);
-		coeff_type val = sigma.evaluate(test_root);
-		err_eval_poly += poly(i, val);
-		if(val == 0) {
-			err_locs.push_back(i);
-		}
-	}
-	printf("err_eval_poly:\n");
-	poly_print(err_eval_poly);
+	chien_search(&err_locs, coeff_type::order()-1, sigma);
 	printf("err locs:\n");
 	for(unsigned i = 0; i < err_locs.size(); i++)
 		printf("%u ", err_locs[i]);
