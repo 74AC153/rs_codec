@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	std::vector<gf_2_8> inbuf;
-	for(unsigned i = 0; i < 255 - (2 * t) && ! feof(infile); i++) {
+	std::vector<coeff_type> inbuf;
+	for(unsigned i = 0; i < coeff_type::order() - 1 - (2 * t); i++) {
 		int ch = fgetc(infile);
 		if(ch == EOF) break;
 		inbuf.push_back(coeff_type((unsigned)ch));
