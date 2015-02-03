@@ -126,6 +126,12 @@ public:
 	polynomial &operator<<=(size_t rhs)
 	{ *this *= polynomial(rhs, 1); return *this; }
 
+	polynomial operator>>(size_t rhs) const
+	{ polynomial ret(*this); ret >>= rhs; return ret; }
+
+	polynomial &operator>>=(size_t rhs)
+	{ *this /= polynomial(rhs, 1); return *this; }
+
 	polynomial operator/(const coeff &rhs) const
 	{ polynomial ret(*this); ret /= polynomial(0, rhs); return ret; }
 
