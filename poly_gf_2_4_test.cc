@@ -9,7 +9,7 @@ typedef polynomial<coeff_type> poly;
 void poly_print(poly &P)
 {
 	for(unsigned i = 0; i < P.terms(); i++)
-		printf("%u ", (unsigned) P[i]);
+		printf("%x ", (unsigned) P[i]);
 	printf("( ");
 	for(unsigned i = 0; i < P.terms(); i++) {
 		if((unsigned) P[i] == 0) printf("- ");
