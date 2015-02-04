@@ -1,4 +1,4 @@
-OUTPUT = poly_test gf_2_4_test poly_gf_2_4_test rs_codec corrupt
+OUTPUT = poly_test gf_2_4_test poly_gf_2_4_test rs_codec rs_codec16 corrupt
 
 default: ${OUTPUT}
 
@@ -13,6 +13,9 @@ poly_gf_2_4_test: poly_gf_2_4_test.cc gf_2_4.cc gf_2_8.cc gf_2_16.cc
 
 rs_codec: rs_codec.cc gf_2_8.cc
 	g++ -g3 -Wall -Wextra -std=c++11 -o $@ $^
+
+rs_codec16: rs_codec16.cc gf_2_16.cc
+	g++ -O3 -Wall -Wextra -std=c++11 -o $@ $^
 
 corrupt: corrupt.c
 	gcc -g3 -Wall -Wextra -std=c99 -D_POSIX_C_SOURCE=2 -o $@ $^
