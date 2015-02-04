@@ -7,7 +7,7 @@
 typedef gf_2_8 coeff_type;
 int main(int argc, char *argv[])
 {
-	FILE *infile, *outfile;
+	FILE *infile = NULL, *outfile = NULL;
 	unsigned t = 0;
 	char *endp;
 	bool decode = false;
@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 		if(ch == EOF) break;
 		inbuf.push_back(coeff_type((unsigned)ch));
 	}
+	std::reverse(inbuf.begin(), inbuf.end());
 
 	polynomial<coeff_type> input(inbuf);
 	polynomial<coeff_type> output;
@@ -82,8 +83,11 @@ int main(int argc, char *argv[])
 		rs_encode(&output, input, generator_roots);
 	}
 
+	std::vector<coeff_type> outbuf = output.rawdata();
+	std::reverse(outbuf.begin(), outbuf.end());
+
 	for(unsigned i = 0; i < output.terms(); i++) {
-		unsigned char byte = (unsigned) output[i];
+		unsigned char byte = (unsigned) outbuf[i];
 		fwrite(&byte, 1, 1, outfile);
 	}
 

@@ -22,6 +22,9 @@ public:
 		return ret;
 	}
 
+	std::vector<coeff> rawdata()
+	{ return p; }
+
 	polynomial &operator=(const polynomial &rhs)
 	{ p = rhs.p; return *this; }
 
