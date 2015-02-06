@@ -105,6 +105,20 @@ struct { polynomial<doublecoeff> A, B, X, Y, G; } euclid_tests[] = {
 	{ { 2, 5, 4, 1 }, { 1, 3, 3, 1 }, { 1 }, { -1 }, { 1, 2, 1 } },
 };
 
+struct { polynomial<doublecoeff> Z,A,B; doublecoeff s; unsigned n;} apsbxn_tests[]={
+	{ {}, {}, {}, 0, 0 },
+	{ {}, {}, {}, 1.0, 0 },
+	{ {1}, {1}, {}, 1.0, 0 },
+	{ {1}, {}, {1}, 1.0, 0 },
+	{ {0, 1}, {0}, {1}, 1.0, 1 },
+	{ {1, 1}, {1}, {1}, 1.0, 1 },
+	{ {1, 1}, {0, 1}, {1}, 1.0, 0 },
+	{ {2, 1}, {0, 1}, {1}, 2.0, 0 },
+	{ {0, 3}, {0, 1}, {1}, 2.0, 1 },
+	{ {0, 1, 2}, {0, 1}, {1}, 2.0, 2 },
+	{ {1, 2, 1}, {1, 1}, {1, 1}, 1.0, 1 },
+};
+
 // given A(x), B(x)
 // return G, X, Y, s.t.:
 // A(x) * X(x) + B(x) * Y(x) = G(x)
@@ -229,6 +243,27 @@ do { \
 		printf(", Y = "); poly_print(Ytest);
 		printf("(=? "); poly_print(euclid_tests[i].Y); printf(") ");
 		printf("\n");
+	}
+
+	for(unsigned i = 0; i < sizeof(apsbxn_tests) / sizeof(apsbxn_tests[0]); i++) {
+		polynomial<doublecoeff> Z_test(apsbxn_tests[i].A);
+		Z_test.plus_s_Bx_x_pow_n(apsbxn_tests[i].s,
+		                         apsbxn_tests[i].B,
+		                         apsbxn_tests[i].n);
+		if(Z_test != apsbxn_tests[i].Z)
+			printf("[FAIL] ");
+		else
+			printf("[OK]   ");
+
+		printf("plus_s_Bx_x_pow_n( ");
+      poly_print(apsbxn_tests[i].A);
+      printf(", %e , ", apsbxn_tests[i].s.val);
+      poly_print(apsbxn_tests[i].B);
+      printf(", %u) -> ", apsbxn_tests[i].n);
+      poly_print(Z_test);
+      printf("(=? ");
+      poly_print(apsbxn_tests[i].Z);
+      printf(")\n");
 	}
 
 	return 0;

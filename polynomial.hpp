@@ -159,6 +159,20 @@ public:
 	coeff &operator[](size_t rhs)
 	{ return p[rhs]; }
 
+	void plus_s_Bx_x_pow_n(const coeff &s,
+	                       const polynomial<coeff> &B,
+	                       unsigned n)
+	{
+		unsigned B_shifted_len = B.terms() + n;
+		unsigned len = p.size() > B_shifted_len ? p.size() : B_shifted_len;
+		p.resize(len);
+		for(unsigned i = len; i > n; i--) {
+			if(i <= B_shifted_len)
+				p[i-1] += s * B[i - 1 - n];
+		}
+		trim(&p);
+	}
+
 	static void div_quot_rem(polynomial<coeff> *Q, 
 	                         polynomial<coeff> *R,
 	                         const polynomial<coeff> &A, 
@@ -167,51 +181,36 @@ public:
 		//  Initialize: _R(x) = A(x)
 		//              align = n - j
 		//
-		//  at each step, calculate:
+		//  at each step, calculate (until n < j):
 		//
-		//                Q_m x^align +...
+		//                Q_m x^(n-j) +...
 		//              -------------------
 		//  B_j(x) +... ) R_n x +...
 		//              -   T(x)
 		//              ----------
 		//                       R_n-1 x +...
 		//
-		//  do:
-		//    Q_m = -R_n / B_j
-		//    T(x) = (B(x) * x^align) * Q_m
-		//    R(x) = R(x) + T(x)
-		//    align = align - 1
-		//  while align >= 0
+		// Q_m = R_n / B_j
+		// T(x) = B(x) * Q_m * x^(n-j)
+		// R(x) = R(x) - T(x)
 
-		polynomial _R(A.p);
-		std::vector<coeff> _Q;
-		int align = A.terms() - B.terms();
-		
-		if(align < 0) {
-			// special case if order(A) < order(B)
-			*Q = polynomial(_Q);
-			*R = _R;
+		*R = A;
+		int B_shift = R->terms() - B.terms();
+		Q->p.resize(0);
+		if(B_shift < 0)
 			return;
-		}
-
-		coeff Q_m;
-		polynomial L, T;
-		do {
-			coeff _R_lead = _R.terms() ? _R[_R.terms()-1] : coeff(0);
+		Q->p.resize(B_shift+1);
+		while(1) {
+			B_shift = R->terms() - B.terms();
+			if(B_shift < 0)
+				break;
+			coeff R_lead = R->terms() ? (*R)[R->terms()-1] : coeff(0);
 			coeff B_lead = B.terms() ? B[B.terms()-1] : coeff(0);
-			Q_m = _R_lead / B_lead;
-			T = (B << align) * Q_m;
-			if(_R.terms() < T.terms())
-				_Q.push_back(0);
-			else {
-				_Q.push_back(Q_m);
-				_R -= T;
-			}
-		} while(--align >= 0);
-
-		std::reverse(_Q.begin(), _Q.end());
-		*Q = polynomial(_Q);
-		*R = _R;
+			coeff Q_m(R_lead / B_lead);
+			R->plus_s_Bx_x_pow_n(-Q_m, B, B_shift);
+			(*Q)[B_shift] = Q_m;
+		}
+		trim(&Q->p);
 	}
 
 private:
