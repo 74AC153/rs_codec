@@ -1,0 +1,41 @@
+Reed-Solomon encoders for 8-bit and 16-bit data
+
+Usage:
+
+add parity:
+	rs_codec -i <infile> -o <outfile-with-parity> -t <redundancy>
+	rs_codec16 -i <infile> -o <outfile-with-parity> -t <redundancy>
+
+correct:
+	rs_codec -d -i <infile-with-parity> -o <outfile-corrected> -t <redundancy>
+	rs_codec16 -d -i <infile-with-parity> -o <outfile-corrected> -t <redundancy>
+
+-t <redundancy> must match between encode and decode calls.
+
+<redundancy> is the maximum number of correctable (rs_codec: 8 bit, rs_codec16:
+16 bit) symbols.
+
+max input filesize fo rs_codec is 255 - 2 * <redundancy> bytes;
+max input filesize fo rs16_codec is 65535 - 2 * <redundancy> bytes. input file
+	must be even number of bytes long.
+
+
+the following convenience program is included to demonstrate corruption:
+
+	corrupt -i <infile> -o <outfile> -n <num-bytes-to-corrupe> -s <rand-seed>
+
+
+
+Sources:
+
+William A. Geisel, NASA Technical Memorandum 102162. Tutorial on Reed-Solomon
+	Error Control Coding.
+
+C. K. P. Clarke, Reed-Solomon Error Correction, BBC R&D White Paper WHP 031
+
+Bernard Sklar, Reed Solomon Codes. http://ptgmedia.pearsoncmg.com/images/art_sklar7_reed-solomon/elementLinks/art_sklar7_reed-solomon.pdf
+	retrieved 6-Feb-2015
+
+Reed–Solomon codes for coders. Wikiversity.
+	http://en.wikiversity.org/w/index.php?title=Reed%E2%80%93Solomon_codes_for_coders&oldid=1270372.
+	retrieved February 6-Feb-2015
