@@ -68,6 +68,9 @@ public:
 	gf_2_8 operator-(const gf_2_8 &rhs) const
 	{ gf_2_8 ret = *this; ret -= rhs; return ret; }
 
+	gf_2_8 operator-() const
+	{ return *this; }
+
 	gf_2_8 &operator-=(const gf_2_8 &rhs)
 	{ rawval ^= rhs.rawval; return *this; };
 

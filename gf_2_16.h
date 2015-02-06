@@ -71,6 +71,9 @@ public:
 	gf_2_16 &operator-=(const gf_2_16 &rhs)
 	{ rawval ^= rhs.rawval; return *this; };
 
+	gf_2_16 operator-() const
+	{ return *this; }
+
 	gf_2_16 operator*(const gf_2_16 &rhs) const
 	{ gf_2_16 ret = *this; ret *= rhs; return ret; };
 
